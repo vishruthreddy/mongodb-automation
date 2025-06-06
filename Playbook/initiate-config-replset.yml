@@ -1,0 +1,35 @@
+---
+- name: Initiate config replica set from n2
+  hosts: n2
+  become: yes
+  vars:
+    config_replset_name: configReplSet
+    config_port: 27019
+
+  tasks:
+    - name: Build replica set members config dynamically from group g1
+      set_fact:
+        config_members: >-
+          [{% for host in groups['g1'] %}
+            { _id: {{ loop.index0 }}, host: "{{ hostvars[host]['ansible_host'] | default(host) }}:{{ config_port }}" }{% if not loop.last %},{% endif %}
+          {% endfor %}]
+
+    - name: Generate rs.initiate command
+      set_fact:
+        replset_initiate_command: |
+          rs.initiate({
+            _id: "{{ config_replset_name }}",
+            configsvr: true,
+            members: {{ config_members | to_nice_json }}
+          });
+
+    - name: Run rs.initiate() on config server
+      shell: |
+        mongosh --port {{ config_port }} --eval '{{ replset_initiate_command }}'
+      args:
+        executable: /bin/bash
+      register: replset_output
+
+    - name: Show replica set initiation result
+      debug:
+        var: replset_output.stdout

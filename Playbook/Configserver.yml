@@ -1,0 +1,39 @@
+---
+- name: Setup MongoDB Config Server
+  hosts: configsvr
+  become: yes
+  vars:
+    configdb_path: /data/configdb
+    log_path: /var/log/mongodb/configsvr.log
+    mongo_port: 27019
+    replSetName: configReplSet
+  tasks:
+    - name: Create configdb directory
+      ansible.builtin.file:
+        path: "{{ configdb_path }}"
+        state: directory
+        owner: mongodb
+        group: mongodb
+        mode: '0755'
+
+    - name: Create log file for config server
+      ansible.builtin.file:
+        path: "{{ log_path }}"
+        state: touch
+        owner: mongodb
+        group: mongodb
+        mode: '0644'
+
+    - name: Start config server process (forked, background)
+      ansible.builtin.shell: |
+        sudo -u mongodb mongod \
+          --configsvr \
+          --replSet {{ replSetName }} \
+          --port {{ mongo_port }} \
+          --dbpath {{ configdb_path }} \
+          --bind_ip 0.0.0.0 \
+          --logpath {{ log_path }} \
+          --logappend \
+          --fork
+      args:
+        creates: "{{ configdb_path }}/mongod.lock"

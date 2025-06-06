@@ -1,0 +1,15 @@
+---
+- name: Install mongos on RHEL 9
+  hosts: all
+  become: yes
+  tasks:
+    - name: Install mongos and mongosh (works on RHEL 9 only)
+      ansible.builtin.dnf:
+        name:
+          - mongodb-mongodb-org
+          - mongodb-mongosh
+        state: present
+        update_cache: yes
+      when: ansible_distribution_major_version == "9" and ansible_os_family == "RedHat"
+      # This playbook is specifically written for RHEL 9.
+      # For other versions or distributions (e.g., Ubuntu, RHEL 8), this command/package name might not work.

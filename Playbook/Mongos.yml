@@ -1,0 +1,56 @@
+---
+- name: Setup and start mongos with shard config
+  hosts: mongos_server  # Define this host in your inventory (e.g., 172.24.7.37)
+  become: yes
+  vars:
+    mongos_port: 27027
+    config_servers: "172.24.7.38:27019,172.24.7.39:27019,172.24.7.37:27019"
+    log_path: /var/log/mongodb/mongos1.log
+    keyfile_path: /data/mongodb-keyfile
+    shards:
+      - "rsShard1/172.24.7.38:27018,172.24.7.39:27018,172.24.7.37:27018"
+      - "rsShard2/172.24.7.39:27028,172.24.7.38:27028,172.24.7.37:27028"
+
+  tasks:
+
+    - name: Ensure mongos log file exists
+      file:
+        path: "{{ log_path }}"
+        state: touch
+        owner: mongodb
+        group: mongodb
+        mode: '0644'
+
+    - name: Start mongos router
+      become_user: mongodb
+      shell: |
+        mongos \
+        --configdb configReplSet/{{ config_servers }} \
+        --port {{ mongos_port }} \
+        --bind_ip 0.0.0.0 \
+        --fork \
+        --logpath {{ log_path }} \
+        --logappend \
+        --keyFile {{ keyfile_path }}
+      args:
+        creates: /tmp/mongos_started.flag
+      register: mongos_start
+
+    - name: Create flag file to prevent rerun of mongos
+      file:
+        path: /tmp/mongos_started.flag
+        state: touch
+      when: mongos_start is changed
+
+    - name: Add shards via mongos
+      shell: |
+        mongosh --host localhost --port {{ mongos_port }} <<EOF
+        {% for shard in shards %}
+        sh.addShard("{{ shard }}");
+        {% endfor %}
+        EOF
+      register: add_shards_result
+
+    - name: Show shard addition result
+      debug:
+        var: add_shards_result.stdout_lines

@@ -1,0 +1,70 @@
+---
+# This playbook installs MongoDB and sets up a replica set for rsshard1 on RHEL 9 servers.
+
+- name: Create and start MongoD instances for rsShard1
+  hosts: g1
+  become: yes
+  vars:
+    shard_dbpath: /data/db/shard1
+    shard_logpath: /var/log/mongodb/shard1.log
+    shard_port: 27018
+    repl_set_name: rsShard1
+  tasks:
+    - name: Create dbpath directory
+      ansible.builtin.file:
+        path: "{{ shard_dbpath }}"
+        state: directory
+        owner: mongodb
+        group: mongodb
+        mode: '0755'
+
+    - name: Create log file
+      ansible.builtin.file:
+        path: "{{ shard_logpath }}"
+        state: touch
+        owner: mongodb
+        group: mongodb
+        mode: '0644'
+
+    - name: Run mongod shard1 instance
+      ansible.builtin.shell: >
+        mongod --shardsvr \
+               --port {{ shard_port }} \
+               --dbpath {{ shard_dbpath }} \
+               --logpath {{ shard_logpath }} \
+               --logappend \
+               --fork \
+               --replSet {{ repl_set_name }} \
+               --bind_ip 0.0.0.0
+      args:
+        creates: "{{ shard_dbpath }}/mongod.lock"
+      become_user: mongodb
+
+
+---
+- name: Initiate rsShard1 with dynamic inventory
+  hosts: n2  # Initiate from n2 (intended primary)
+  become: yes
+  vars:
+    shard_port: 27018
+    repl_set_name: rsShard1
+  tasks:
+    - name: Initiate rsShard1 replica set with roles (dynamic IPs)
+      ansible.builtin.shell: |
+        mongosh --host localhost --port {{ shard_port }} <<'JS'
+        rs.initiate({
+          _id: "{{ repl_set_name }}",
+          members: [
+            { _id: 0, host: "{{ hostvars['n2']['ansible_host'] }}:{{ shard_port }}", priority: 2 },
+            { _id: 1, host: "{{ hostvars['n3']['ansible_host'] }}:{{ shard_port }}", priority: 1 },
+            { _id: 2, host: "{{ hostvars['n1']['ansible_host'] }}:{{ shard_port }}", arbiterOnly: true }
+          ]
+        });
+        JS
+      args:
+        executable: /bin/bash
+      register: rsShard1_init
+
+    - name: Show output of replica set initiation
+      debug:
+        var: rsShard1_init.stdout
