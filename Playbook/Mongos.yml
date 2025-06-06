@@ -1,17 +1,38 @@
 ---
 - name: Setup and start mongos with shard config
-  hosts: mongos_server  # Define this host in your inventory (e.g., 172.24.7.37)
+  hosts: n1  # Run only on 172.24.7.37 where mongos runs
   become: yes
   vars:
-    mongos_port: 27027
-    config_servers: "172.24.7.38:27019,172.24.7.39:27019,172.24.7.37:27019"
+    mongos_port: 27054
     log_path: /var/log/mongodb/mongos1.log
     keyfile_path: /data/mongodb-keyfile
-    shards:
-      - "rsShard1/172.24.7.38:27018,172.24.7.39:27018,172.24.7.37:27018"
-      - "rsShard2/172.24.7.39:27028,172.24.7.38:27028,172.24.7.37:27028"
 
   tasks:
+
+    - name: Build dynamic config server string
+      set_fact:
+        config_servers: >-
+          {{ groups['g1'] | map('extract', hostvars)
+                          | map('community.general.dict_kv', 'ansible_host', 'config_port')
+                          | map('join', ':')
+                          | join(',') }}
+
+    - name: Build shard definitions dynamically using hostvars
+      set_fact:
+        shard1: >-
+          {{ groups['g1'] | map('extract', hostvars)
+                          | map('community.general.dict_kv', 'ansible_host', 'shard1_port')
+                          | map('join', ':')
+                          | join(',') }}
+        shard2: >-
+          {{ groups['g1'] | map('extract', hostvars)
+                          | map('community.general.dict_kv', 'ansible_host', 'shard2_port')
+                          | map('join', ':')
+                          | join(',') }}
+        shards:
+          - "rsShard1/{{ shard1 }}"
+          - "rsShard2/{{ shard2 }}"
+
 
     - name: Ensure mongos log file exists
       file:
@@ -25,13 +46,13 @@
       become_user: mongodb
       shell: |
         mongos \
-        --configdb configReplSet/{{ config_servers }} \
-        --port {{ mongos_port }} \
-        --bind_ip 0.0.0.0 \
-        --fork \
-        --logpath {{ log_path }} \
-        --logappend \
-        --keyFile {{ keyfile_path }}
+          --configdb configReplSet/{{ config_servers }} \
+          --port {{ mongos_port }} \
+          --bind_ip 0.0.0.0 \
+          --fork \
+          --logpath {{ log_path }} \
+          --logappend
+          # --keyFile {{ keyfile_path }}
       args:
         creates: /tmp/mongos_started.flag
       register: mongos_start

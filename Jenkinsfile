@@ -8,15 +8,15 @@ pipeline {
         //         git branch: 'main',credentialsId: 'gitcred',url: 'https://github.com/saitejat1907/mongodb-automation.git'  // Cloning your GitHub repo
         //     }
         // }
-        stage("Install Mongos") {
-            steps {
-                ansiblePlaybook credentialsId: 'Ansible',
-                                 disableHostKeyChecking: true,
-                                 installation: 'Ansible',
-                                 inventory: 'dev.inv',
-                                 playbook: 'Playbook/Mongoinstall.yml'
-            }
-        }
+        // stage("Install Mongos") {
+        //     steps {
+        //         ansiblePlaybook credentialsId: 'Ansible',
+        //                          disableHostKeyChecking: true,
+        //                          installation: 'Ansible',
+        //                          inventory: 'dev.inv',
+        //                          playbook: 'Playbook/Mongoinstall.yml'
+        //     }
+        // }
 
         stage("setup Configserver") {
             steps {
@@ -38,7 +38,7 @@ pipeline {
                                  playbook: 'Playbook/initiate-config-replset.yml'
             }
         }
-        stage("Execute mysql Playbook") {
+        stage("create and initiate rsShard1") {
             steps {
                 ansiblePlaybook credentialsId: 'Ansible',
                                  disableHostKeyChecking: true,
@@ -47,7 +47,7 @@ pipeline {
                                  playbook: 'Playbook/rsShard1.yml'
             }
         }
-        stage("Execute apache Playbook") {
+        stage("create and initiate rsShard2") {
             steps {
                 ansiblePlaybook credentialsId: 'Ansible',
                                  disableHostKeyChecking: true,
@@ -56,7 +56,7 @@ pipeline {
                                  playbook: 'Playbook/rsShard2.yml'
             }
         }
-        stage("Execute apache Playbook") {
+        stage("Start Mongos router and add shards") {
             steps {
                 ansiblePlaybook credentialsId: 'Ansible',
                                  disableHostKeyChecking: true,

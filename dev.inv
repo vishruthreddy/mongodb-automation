@@ -1,7 +1,4 @@
 [g1]
-n1 ansible_host=172.24.7.37   ansible_user=matilda-svc
-n2 ansible_host=172.24.7.38   ansible_user=matilda-svc
-n3 ansible_host=172.24.7.39   ansible_user=matilda-svc
-
-[mongos_server]
-172.24.7.37
+n1 ansible_host=172.24.7.37 config_port=27051 shard1_port=27052 shard2_port=27053
+n2 ansible_host=172.24.7.38 config_port=27051 shard1_port=27052 shard2_port=27053
+n3 ansible_host=172.24.7.39 config_port=27051 shard1_port=27052 shard2_port=27053
