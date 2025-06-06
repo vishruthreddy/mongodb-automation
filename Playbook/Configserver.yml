@@ -1,6 +1,6 @@
 ---
 - name: Setup MongoDB Config Server
-  hosts: configsvr
+  hosts: g1
   become: yes
   vars:
     configdb_path: /data/configdb
