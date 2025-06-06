@@ -4,7 +4,7 @@
   become: yes
   vars:
     config_replset_name: configReplSet
-    config_port: 27019
+    config_port: 27051
 
   tasks:
     - name: Build replica set members config dynamically from group g1

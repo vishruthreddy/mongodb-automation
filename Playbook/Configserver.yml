@@ -5,7 +5,7 @@
   vars:
     configdb_path: /data/configdb
     log_path: /var/log/mongodb/configsvr.log
-    mongo_port: 27019
+    mongo_port: 27051
     replSetName: configReplSet
   tasks:
     - name: Create configdb directory

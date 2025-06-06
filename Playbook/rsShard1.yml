@@ -7,7 +7,7 @@
   vars:
     shard_dbpath: /data/db/shard1
     shard_logpath: /var/log/mongodb/shard1.log
-    shard_port: 27018
+    shard_port: 27052
     repl_set_name: rsShard1
   tasks:
     - name: Create dbpath directory
@@ -46,7 +46,7 @@
   hosts: n2  # Initiate from n2 (intended primary)
   become: yes
   vars:
-    shard_port: 27018
+    shard_port: 27052
     repl_set_name: rsShard1
   tasks:
     - name: Initiate rsShard1 replica set with roles (dynamic IPs)
