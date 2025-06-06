@@ -1,13 +1,13 @@
-
 pipeline {
     agent any
 
     stages {
-        // stage("github repo"){
+        // stage("github repo") {
         //     steps {
-        //         git branch: 'main',credentialsId: 'gitcred',url: 'https://github.com/saitejat1907/mongodb-automation.git'  // Cloning your GitHub repo
+        //         git branch: 'main', credentialsId: 'gitcred', url: 'https://github.com/saitejat1907/mongodb-automation.git'
         //     }
         // }
+
         // stage("Install Mongos") {
         //     steps {
         //         ansiblePlaybook credentialsId: 'Ansible',
@@ -18,62 +18,73 @@ pipeline {
         //     }
         // }
 
-        stage("setup Configserver") {
-            
+        stage("Setup Configserver") {
             steps {
-                { withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')])
-                ansiblePlaybook credentialsId: 'Ansible',
-                                 disableHostKeyChecking: true,
-                                 installation: 'Ansible',
-                                 inventory: 'dev.inv',
-                                 playbook: 'Playbook/Configserver.yml'
-            }
+                script {
+                    withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')]) {
+                        ansiblePlaybook credentialsId: 'Ansible',
+                                        disableHostKeyChecking: true,
+                                        installation: 'Ansible',
+                                        inventory: 'dev.inv',
+                                        playbook: 'Playbook/Configserver.yml'
+                    }
+                }
             }
         }
-
 
         stage("Initiate Config Replica Set") {
             steps {
-                { withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')])
-                ansiblePlaybook credentialsId: 'Ansible',
-                                 disableHostKeyChecking: true,
-                                 installation: 'Ansible',
-                                 inventory: 'dev.inv',
-                                 playbook: 'Playbook/initiate-config-replset.yml'
-            }
-            }
-        }
-        stage("create and initiate rsShard1") {
-            steps {
-                { withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')])
-                ansiblePlaybook credentialsId: 'Ansible',
-                                 disableHostKeyChecking: true,
-                                 installation: 'Ansible',
-                                 inventory: 'dev.inv',
-                                 playbook: 'Playbook/rsShard1.yml'
-            }
+                script {
+                    withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')]) {
+                        ansiblePlaybook credentialsId: 'Ansible',
+                                        disableHostKeyChecking: true,
+                                        installation: 'Ansible',
+                                        inventory: 'dev.inv',
+                                        playbook: 'Playbook/initiate-config-replset.yml'
+                    }
+                }
             }
         }
-        stage("create and initiate rsShard2") {
+
+        stage("Create and Initiate rsShard1") {
             steps {
-                { withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')])
-                ansiblePlaybook credentialsId: 'Ansible',
-                                 disableHostKeyChecking: true,
-                                 installation: 'Ansible',
-                                 inventory: 'dev.inv',
-                                 playbook: 'Playbook/rsShard2.yml'
-            }
+                script {
+                    withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')]) {
+                        ansiblePlaybook credentialsId: 'Ansible',
+                                        disableHostKeyChecking: true,
+                                        installation: 'Ansible',
+                                        inventory: 'dev.inv',
+                                        playbook: 'Playbook/rsShard1.yml'
+                    }
+                }
             }
         }
-        stage("Start Mongos router and add shards") {
+
+        stage("Create and Initiate rsShard2") {
             steps {
-                { withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')])
-                ansiblePlaybook credentialsId: 'Ansible',
-                                 disableHostKeyChecking: true,
-                                 installation: 'Ansible',
-                                 inventory: 'dev.inv',
-                                 playbook: 'Playbook/Mongos.yml'
+                script {
+                    withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')]) {
+                        ansiblePlaybook credentialsId: 'Ansible',
+                                        disableHostKeyChecking: true,
+                                        installation: 'Ansible',
+                                        inventory: 'dev.inv',
+                                        playbook: 'Playbook/rsShard2.yml'
+                    }
+                }
             }
+        }
+
+        stage("Start Mongos Router and Add Shards") {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')]) {
+                        ansiblePlaybook credentialsId: 'Ansible',
+                                        disableHostKeyChecking: true,
+                                        installation: 'Ansible',
+                                        inventory: 'dev.inv',
+                                        playbook: 'Playbook/Mongos.yml'
+                    }
+                }
             }
         }
     }
