@@ -27,9 +27,7 @@ pipeline {
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
                                         playbook: 'Playbook/Configserver.yml'
-                                        extraVars: [
-                                            ansible_become_pass: "${BECOME_PASS}"
-                                        ]
+                                        extras: "-e ansible_become_pass=${BECOME_PASS}"
                     }
                 }
             }
@@ -44,9 +42,7 @@ pipeline {
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
                                         playbook: 'Playbook/initiate-config-replset.yml'
-                                        extraVars: [
-                                            ansible_become_pass: "${BECOME_PASS}"
-                                        ]
+                                        extras: "-e ansible_become_pass=${BECOME_PASS}"
                     }
                 }
             }
@@ -61,9 +57,7 @@ pipeline {
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
                                         playbook: 'Playbook/rsShard1.yml'
-                                        extraVars: [
-                                            ansible_become_pass: "${BECOME_PASS}"
-                                        ]
+                                        extras: "-e ansible_become_pass=${BECOME_PASS}"
                     }
                 }
             }
@@ -78,9 +72,7 @@ pipeline {
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
                                         playbook: 'Playbook/rsShard2.yml'
-                                        extraVars: [
-                                            ansible_become_pass: "${BECOME_PASS}"
-                                        ]
+                                        extras: "-e ansible_become_pass=${BECOME_PASS}"
                     }
                 }
             }
@@ -95,9 +87,7 @@ pipeline {
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
                                         playbook: 'Playbook/Mongos.yml'
-                                        extraVars: [
-                                            ansible_become_pass: "${BECOME_PASS}"
-                                        ]
+                                        extras: "-e ansible_become_pass=${BECOME_PASS}"
                     }
                 }
             }
