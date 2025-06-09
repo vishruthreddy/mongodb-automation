@@ -20,11 +20,11 @@
 
     - name: Set rsShard1 connection string
       set_fact:
-        rsshard1: "rsShard1/{{ hostvars['n2']['ansible_host'] }}:{{ shard1_port }},{{ hostvars['n3']['ansible_host'] }}:{{ shard1_port }},{{ hostvars['n1']['ansible_host'] }}:27118"
+        rsshard1: "rsShard1/{{ hostvars['n2']['ansible_host'] }}:{{ shard1_port }},{{ hostvars['n3']['ansible_host'] }}:{{ shard1_port }},{{ hostvars['n1']['ansible_host'] }}:{{ shard1_port }}"
 
     - name: Set rsShard2 connection string
       set_fact:
-        rsshard2: "rsShard2/{{ hostvars['n3']['ansible_host'] }}:{{ shard2_port }},{{ hostvars['n2']['ansible_host'] }}:{{ shard2_port }},{{ hostvars['n1']['ansible_host'] }}:27128"
+        rsshard2: "rsShard2/{{ hostvars['n3']['ansible_host'] }}:{{ shard2_port }},{{ hostvars['n2']['ansible_host'] }}:{{ shard2_port }},{{ hostvars['n1']['ansible_host'] }}:{{ shard2_port }}"
 
     - name: Ensure mongos log file exists
       file:
