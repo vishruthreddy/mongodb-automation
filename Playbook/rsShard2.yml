@@ -40,8 +40,6 @@
         creates: "{{ shard_dbpath }}/mongod.lock"
       become_user: mongodb
 
----
-
 - name: Initiate rsShard2 with dynamic inventory
   hosts: n3  # Initiate from n2 (intended primary)
   become: yes

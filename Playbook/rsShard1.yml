@@ -1,6 +1,5 @@
 ---
-# This playbook installs MongoDB and sets up a replica set for rsshard1 on RHEL 9 servers.
-
+# Play 1: Start MongoDB instances for rsShard1
 - name: Create and start MongoD instances for rsShard1
   hosts: g1
   become: yes
@@ -40,10 +39,9 @@
         creates: "{{ shard_dbpath }}/mongod.lock"
       become_user: mongodb
 
-
----
-- name: Initiate rsShard1 with dynamic inventory
-  hosts: n2  # Initiate from n2 (intended primary)
+# Play 2: Initiate rsShard1 from n2
+- name: Initiate rsShard1 replica set
+  hosts: n2
   become: yes
   vars:
     shard_port: 27052
