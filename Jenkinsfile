@@ -110,20 +110,7 @@ pipeline {
         //         }
         //     }
         // }
-        stage("Copy Mongo Scripts") {
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')]) {
-                        ansiblePlaybook credentialsId: 'Ansible',
-                                        disableHostKeyChecking: true,
-                                        installation: 'Ansible',
-                                        inventory: 'dev.inv',
-                                        playbook: 'Playbook/copy-scripts.yml',
-                                        extras: "-e ansible_become_pass=${BECOME_PASS}"
-                    }
-                }
-            }
-        }
+        
 
         stage("Run Sharding Script") {
             steps {
@@ -133,7 +120,7 @@ pipeline {
                                         disableHostKeyChecking: true,
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
-                                        playbook: 'Playbook/shardsetup.yml',
+                                        playbook: 'Playbook/Sharding.yaml',
                                         extras: "-e ansible_become_pass=${BECOME_PASS}"
                     }
                 }
@@ -148,7 +135,7 @@ pipeline {
                                         disableHostKeyChecking: true,
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
-                                        playbook: 'Playbook/mongobackup.yml',
+                                        playbook: 'Playbook/Backup.yaml',
                                         extras: "-e ansible_become_pass=${BECOME_PASS}"
                     }
                 }
@@ -164,7 +151,7 @@ pipeline {
                                         disableHostKeyChecking: true,
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
-                                        playbook: 'Playbook/mongorestore.yml',
+                                        playbook: 'Playbook/Restore.yaml',
                                         extras: "-e ansible_become_pass=${BECOME_PASS} -e date=${params.RESTORE_DATE}"
                     }
                 }
