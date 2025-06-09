@@ -1,25 +1,16 @@
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: mongodb-restore-job
-spec:
-  template:
-    spec:
-      containers:
-      - name: restore-script
-        image: mongo:6.0
-        command: ["/bin/bash", "/scripts/Restore.sh", "2025-06-04"]
-        volumeMounts:
-        - name: script-volume
-          mountPath: /scripts
-        - name: backup-volume
-          mountPath: /backup
-      restartPolicy: Never
-      volumes:
-      - name: script-volume
-        configMap:
-          name: mongodb-scripts
-      - name: backup-volume
-        persistentVolumeClaim:
-          claimName: mongo-backup-pvc
-  backoffLimit: 2
+---
+- name: Run MongoDB Restore
+  hosts: mongos
+  become: yes
+  vars:
+    restore_script: /home/mongodb/scripts/Restore.sh
+    restore_date: "{{ date | default('2025-06-04') }}"
+  tasks:
+    - name: Execute Restore.sh with date {{ restore_date }}
+      shell: |
+        bash {{ restore_script }} {{ restore_date }}
+      register: restore_output
+
+    - name: Show restore output
+      debug:
+        var: restore_output.stdout_lines
