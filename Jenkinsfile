@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    parameters {
+        string(name: 'RESTORE_DATE', defaultValue: '2025-06-04', description: 'Date to restore MongoDB backup from')
+    }
 
     stages {
         // stage("github repo") {
@@ -107,5 +110,65 @@ pipeline {
         //         }
         //     }
         // }
+        stage("Copy Mongo Scripts") {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')]) {
+                        ansiblePlaybook credentialsId: 'Ansible',
+                                        disableHostKeyChecking: true,
+                                        installation: 'Ansible',
+                                        inventory: 'dev.inv',
+                                        playbook: 'Playbook/copy-scripts.yml',
+                                        extras: "-e ansible_become_pass=${BECOME_PASS}"
+                    }
+                }
+            }
+        }
+
+        stage("Run Sharding Script") {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')]) {
+                        ansiblePlaybook credentialsId: 'Ansible',
+                                        disableHostKeyChecking: true,
+                                        installation: 'Ansible',
+                                        inventory: 'dev.inv',
+                                        playbook: 'Playbook/shardsetup.yml',
+                                        extras: "-e ansible_become_pass=${BECOME_PASS}"
+                    }
+                }
+            }
+        }
+
+        stage("Run Backup Script") {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')]) {
+                        ansiblePlaybook credentialsId: 'Ansible',
+                                        disableHostKeyChecking: true,
+                                        installation: 'Ansible',
+                                        inventory: 'dev.inv',
+                                        playbook: 'Playbook/mongobackup.yml',
+                                        extras: "-e ansible_become_pass=${BECOME_PASS}"
+                    }
+                }
+            }
+        }
+
+        stage("Run Restore Script") {
+            steps {
+                input message: "Proceed to restore MongoDB backup from ${params.RESTORE_DATE}?", ok: "Yes"
+                script {
+                    withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')]) {
+                        ansiblePlaybook credentialsId: 'Ansible',
+                                        disableHostKeyChecking: true,
+                                        installation: 'Ansible',
+                                        inventory: 'dev.inv',
+                                        playbook: 'Playbook/mongorestore.yml',
+                                        extras: "-e ansible_become_pass=${BECOME_PASS} -e date=${params.RESTORE_DATE}"
+                    }
+                }
+            }
+        }
     }
 }
