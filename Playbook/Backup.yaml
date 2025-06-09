@@ -3,7 +3,7 @@
   hosts: mongos
   become: yes
   vars:
-    backup_script: /home/mongodb/scripts/Backup.sh
+    backup_script: //usr/local/bin/mongo_backup.sh
   tasks:
     - name: Execute Backup.sh
       shell: |
