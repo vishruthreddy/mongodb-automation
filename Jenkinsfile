@@ -26,7 +26,7 @@ pipeline {
                                         disableHostKeyChecking: true,
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
-                                        playbook: 'Playbook/Configserver.yml'
+                                        playbook: 'Playbook/Configserver.yml',
                                         extras: "-e ansible_become_pass=${BECOME_PASS}"
                     }
                 }
