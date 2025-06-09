@@ -34,10 +34,9 @@
         group: mongodb
         mode: '0644'
 
-    - name: Start mongos router
-      become_user: mongodb
-      shell: |
-        mongos \
+    - name: Start mongos router (forked, background)
+      ansible.builtin.shell: |
+        sudo -u mongodb mongos \
           --configdb {{ config_replset }} \
           --port {{ mongos_port }} \
           --bind_ip 0.0.0.0 \
@@ -49,10 +48,11 @@
       register: mongos_start
 
     - name: Create flag file to prevent rerun of mongos
-      file:
+      ansible.builtin.file:
         path: /tmp/mongos_started.flag
         state: touch
       when: mongos_start is changed
+
 
     - name: Add rsShard1 and rsShard2 via mongos
       shell: |
