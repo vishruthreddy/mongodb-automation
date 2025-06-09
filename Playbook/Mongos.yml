@@ -53,6 +53,15 @@
         state: touch
       when: mongos_start is changed
 
+    - name: Set default write concern to majority
+      shell: |
+        mongosh --host localhost --port {{ mongos_port }} <<EOF
+        db.adminCommand({
+          setDefaultRWConcern: 1,
+          defaultWriteConcern: { w: "majority" }
+        });
+        EOF
+
 
     - name: Add rsShard1 and rsShard2 via mongos
       shell: |
@@ -65,3 +74,12 @@
     - name: Show shard addition result
       debug:
         var: add_shards_result.stdout_lines
+
+    - name: Revert default write concern to w:1
+      shell: |
+        mongosh --host localhost --port {{ mongos_port }} <<EOF
+        db.adminCommand({
+          setDefaultRWConcern: 1,
+          defaultWriteConcern: { w: 1 }
+        });
+        EOF

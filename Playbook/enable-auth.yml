@@ -1,0 +1,161 @@
+---
+- name: Enable authentication and restart MongoDB components with keyFile
+  hosts: g1
+  become: yes
+  vars:
+    keyfile_path: /data/mongodb-keyfile
+    keyfile_content: "randomSharedSecretKey"
+    mongo_port_config: 27051
+    mongo_port_shard1: 27052
+    mongo_port_shard2: 27053
+    mongo_port_mongos: 27054
+    admin_user: root
+    admin_pass: myPassword
+    configdb_path: /data/configdb
+    config_log_path: /var/log/mongodb/configsvr.log
+    shard1_dbpath: /data/db/shard1
+    shard1_logpath: /var/log/mongodb/shard1.log
+    shard2_dbpath: /data/db/shard2
+    shard2_logpath: /var/log/mongodb/shard2.log
+    mongos_log_path: /var/log/mongodb/mongos1.log
+
+  tasks:
+    - name: Ensure keyfile exists with correct permissions
+      copy:
+        dest: "{{ keyfile_path }}"
+        content: "{{ keyfile_content }}"
+        owner: mongodb
+        group: mongodb
+        mode: '0400'
+
+    - name: Add admin user to config server (run only on primary node)
+      when: inventory_hostname == 'n2'
+      shell: |
+        mongosh --port {{ mongo_port_config }} <<EOF
+        use admin;
+        db.createUser({
+          user: "{{ admin_user }}",
+          pwd: "{{ admin_pass }}",
+          roles: [ { role: "root", db: "admin" } ]
+        });
+        EOF
+      args:
+        executable: /bin/bash
+
+    - name: Add admin user to rsShard1 on n2
+      when: inventory_hostname == 'n2'
+      shell: |
+        mongosh --port {{ mongo_port_shard1 }} <<EOF
+        use admin;
+        db.createUser({
+          user: "{{ admin_user }}",
+          pwd: "{{ admin_pass }}",
+          roles: [ { role: "root", db: "admin" } ]
+        });
+        EOF
+      args:
+        executable: /bin/bash
+
+    - name: Add admin user to rsShard2 on n3
+      when: inventory_hostname == 'n3'
+      shell: |
+        mongosh --port {{ mongo_port_shard2 }} <<EOF
+        use admin;
+        db.createUser({
+          user: "{{ admin_user }}",
+          pwd: "{{ admin_pass }}",
+          roles: [ { role: "root", db: "admin" } ]
+        });
+        EOF
+      args:
+        executable: /bin/bash
+
+    - name: Stop mongod config instance before enabling auth
+      when: inventory_hostname in ['n1', 'n2', 'n3']
+      shell: |
+        pid=$(pgrep -f "mongod.*--port {{ mongo_port_config }}") && kill $pid
+      ignore_errors: yes
+
+    - name: Stop mongod rsShard1 instance before enabling auth
+      when: inventory_hostname in ['n2', 'n3']
+      shell: |
+        pid=$(pgrep -f "mongod.*--port {{ mongo_port_shard1 }}") && kill $pid
+      ignore_errors: yes
+
+    - name: Stop mongod rsShard2 instance before enabling auth
+      when: inventory_hostname in ['n2', 'n3']
+      shell: |
+        pid=$(pgrep -f "mongod.*--port {{ mongo_port_shard2 }}") && kill $pid
+      ignore_errors: yes
+
+    - name: Stop mongos router before enabling auth
+      when: inventory_hostname == 'n1'
+      shell: |
+        pid=$(pgrep -f "mongos.*--port {{ mongo_port_mongos }}") && kill $pid
+      ignore_errors: yes
+
+    - name: Restart config server with auth and keyFile
+      when: inventory_hostname in ['n1', 'n2', 'n3']
+      shell: |
+        sudo -u mongodb mongod \
+          --configsvr \
+          --replSet configReplSet \
+          --port {{ mongo_port_config }} \
+          --dbpath {{ configdb_path }} \
+          --bind_ip 0.0.0.0 \
+          --logpath {{ config_log_path }} \
+          --logappend \
+          --keyFile {{ keyfile_path }} \
+          --auth \
+          --fork
+      args:
+        creates: "{{ configdb_path }}/mongod.lock"
+
+    - name: Restart rsShard1 with auth and keyFile
+      when: inventory_hostname in ['n2', 'n3']
+      shell: |
+        sudo -u mongodb mongod \
+          --shardsvr \
+          --replSet rsShard1 \
+          --port {{ mongo_port_shard1 }} \
+          --dbpath {{ shard1_dbpath }} \
+          --bind_ip 0.0.0.0 \
+          --logpath {{ shard1_logpath }} \
+          --logappend \
+          --keyFile {{ keyfile_path }} \
+          --auth \
+          --fork
+      args:
+        creates: "{{ shard1_dbpath }}/mongod.lock"
+
+    - name: Restart rsShard2 with auth and keyFile
+      when: inventory_hostname in ['n2', 'n3']
+      shell: |
+        sudo -u mongodb mongod \
+          --shardsvr \
+          --replSet rsShard2 \
+          --port {{ mongo_port_shard2 }} \
+          --dbpath {{ shard2_dbpath }} \
+          --bind_ip 0.0.0.0 \
+          --logpath {{ shard2_logpath }} \
+          --logappend \
+          --keyFile {{ keyfile_path }} \
+          --auth \
+          --fork
+      args:
+        creates: "{{ shard2_dbpath }}/mongod.lock"
+
+    - name: Restart mongos router with auth and keyFile
+      when: inventory_hostname == 'n1'
+      shell: |
+        sudo -u mongodb mongos \
+          --configdb configReplSet/{{ hostvars['n2']['ansible_host'] }}:{{ mongo_port_config }},{{ hostvars['n3']['ansible_host'] }}:{{ mongo_port_config }},{{ hostvars['n1']['ansible_host'] }}:{{ mongo_port_config }} \
+          --port {{ mongo_port_mongos }} \
+          --bind_ip 0.0.0.0 \
+          --logpath {{ mongos_log_path }} \
+          --logappend \
+          --keyFile {{ keyfile_path }} \
+          --auth \
+          --fork
+      args:
+        creates: /tmp/mongos_started.flag
