@@ -1,6 +1,6 @@
 ---
 - name: Run MongoDB sharding script
-  hosts: mongos
+  hosts: g1
   become: yes
   vars:
     script_path: /home/matilda-svc/scripts/sharding.js
