@@ -1,38 +1,30 @@
 ---
-- name: Setup and start mongos with shard config
-  hosts: n1  # Run only on 172.24.7.37 where mongos runs
+- name: Setup and start mongos router
+  hosts: n1
   become: yes
   vars:
     mongos_port: 27054
     log_path: /var/log/mongodb/mongos1.log
-    keyfile_path: /data/mongodb-keyfile
+
+    # Shard and config ports
+    config1_port: 27051
+    config2_port: 27051
+    config3_port: 27051
+    shard1_port: 27052
+    shard2_port: 27053
 
   tasks:
-
-    - name: Build dynamic config server string
+    - name: Set configReplSet connection string
       set_fact:
-        config_servers: >-
-          {{ groups['g1'] | map('extract', hostvars)
-                          | map('community.general.dict_kv', 'ansible_host', 'config_port')
-                          | map('join', ':')
-                          | join(',') }}
+        config_replset: "configReplSet/{{ hostvars['n1']['ansible_host'] }}:{{ config1_port }},{{ hostvars['n2']['ansible_host'] }}:{{ config2_port }},{{ hostvars['n3']['ansible_host'] }}:{{ config3_port }}"
 
-    - name: Build shard definitions dynamically using hostvars
+    - name: Set rsShard1 connection string
       set_fact:
-        shard1: >-
-          {{ groups['g1'] | map('extract', hostvars)
-                          | map('community.general.dict_kv', 'ansible_host', 'shard1_port')
-                          | map('join', ':')
-                          | join(',') }}
-        shard2: >-
-          {{ groups['g1'] | map('extract', hostvars)
-                          | map('community.general.dict_kv', 'ansible_host', 'shard2_port')
-                          | map('join', ':')
-                          | join(',') }}
-        shards:
-          - "rsShard1/{{ shard1 }}"
-          - "rsShard2/{{ shard2 }}"
+        rsshard1: "rsShard1/{{ hostvars['n2']['ansible_host'] }}:{{ shard1_port }},{{ hostvars['n3']['ansible_host'] }}:{{ shard1_port }},{{ hostvars['n1']['ansible_host'] }}:27118"
 
+    - name: Set rsShard2 connection string
+      set_fact:
+        rsshard2: "rsShard2/{{ hostvars['n3']['ansible_host'] }}:{{ shard2_port }},{{ hostvars['n2']['ansible_host'] }}:{{ shard2_port }},{{ hostvars['n1']['ansible_host'] }}:27128"
 
     - name: Ensure mongos log file exists
       file:
@@ -46,13 +38,12 @@
       become_user: mongodb
       shell: |
         mongos \
-          --configdb configReplSet/{{ config_servers }} \
+          --configdb {{ config_replset }} \
           --port {{ mongos_port }} \
           --bind_ip 0.0.0.0 \
           --fork \
           --logpath {{ log_path }} \
           --logappend
-          # --keyFile {{ keyfile_path }}
       args:
         creates: /tmp/mongos_started.flag
       register: mongos_start
@@ -63,12 +54,11 @@
         state: touch
       when: mongos_start is changed
 
-    - name: Add shards via mongos
+    - name: Add rsShard1 and rsShard2 via mongos
       shell: |
         mongosh --host localhost --port {{ mongos_port }} <<EOF
-        {% for shard in shards %}
-        sh.addShard("{{ shard }}");
-        {% endfor %}
+        sh.addShard("{{ rsshard1 }}");
+        sh.addShard("{{ rsshard2 }}");
         EOF
       register: add_shards_result
 
