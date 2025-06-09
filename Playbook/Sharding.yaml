@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mongodb-sharding-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: sharding-script
+        image: mongo:6.0
+        command: ["mongosh"]
+        args: ["--host", "mongos-host", "--port", "27027", "/scripts/sharding.js"]
+        volumeMounts:
+        - name: script-volume
+          mountPath: /scripts
+      restartPolicy: Never
+      volumes:
+      - name: script-volume
+        configMap:
+          name: mongodb-scripts
+  backoffLimit: 2
