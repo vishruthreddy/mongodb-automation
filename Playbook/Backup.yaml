@@ -1,25 +1,16 @@
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: mongodb-backup-job
-spec:
-  template:
-    spec:
-      containers:
-      - name: backup-script
-        image: mongo:6.0
-        command: ["/bin/bash", "/scripts/Backup.sh"]
-        volumeMounts:
-        - name: script-volume
-          mountPath: /scripts
-        - name: backup-volume
-          mountPath: /backup
-      restartPolicy: Never
-      volumes:
-      - name: script-volume
-        configMap:
-          name: mongodb-scripts
-      - name: backup-volume
-        persistentVolumeClaim:
-          claimName: mongo-backup-pvc
-  backoffLimit: 2
+---
+- name: Run MongoDB Backup
+  hosts: mongos
+  become: yes
+  vars:
+    backup_script: /home/mongodb/scripts/Backup.sh
+  tasks:
+    - name: Execute Backup.sh
+      shell: |
+        bash {{ backup_script }}
+      register: backup_output
+
+    - name: Show backup output
+      debug:
+        var: backup_output.stdout_lines
+
