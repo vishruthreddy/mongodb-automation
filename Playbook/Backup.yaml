@@ -1,9 +1,9 @@
 ---
 - name: Run MongoDB Backup
-  hosts: mongos
+  hosts: g1
   become: yes
   vars:
-    backup_script: //usr/local/bin/mongo_backup.sh
+    backup_script: /usr/local/bin/mongo_backup.sh
   tasks:
     - name: Execute Backup.sh
       shell: |
