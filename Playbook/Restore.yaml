@@ -1,6 +1,6 @@
 ---
 - name: Run MongoDB Restore
-  hosts: mongos
+  hosts: g1
   become: yes
   vars:
     restore_script: /usr/local/bin/mongo_restore.sh
