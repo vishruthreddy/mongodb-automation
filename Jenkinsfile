@@ -93,19 +93,19 @@ pipeline {
             }
         }
 
-        stage("Enable authentication for all mongo components") {
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')]) {
-                        ansiblePlaybook credentialsId: 'Ansible',
-                                        disableHostKeyChecking: true,
-                                        installation: 'Ansible',
-                                        inventory: 'dev.inv',
-                                        playbook: 'Playbook/enable-auth.yml',
-                                        extras: "-e ansible_become_pass=${BECOME_PASS}"
-                    }
-                }
-            }
-        }
+        // stage("Enable authentication for all mongo components") {
+        //     steps {
+        //         script {
+        //             withCredentials([string(credentialsId: 'root_pass', variable: 'BECOME_PASS')]) {
+        //                 ansiblePlaybook credentialsId: 'Ansible',
+        //                                 disableHostKeyChecking: true,
+        //                                 installation: 'Ansible',
+        //                                 inventory: 'dev.inv',
+        //                                 playbook: 'Playbook/enable-auth.yml',
+        //                                 extras: "-e ansible_become_pass=${BECOME_PASS}"
+        //             }
+        //         }
+        //     }
+        // }
     }
 }
