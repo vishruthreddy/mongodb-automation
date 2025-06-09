@@ -1,35 +1,28 @@
 ---
-- name: Initiate config replica set from n2
-  hosts: n2
+- name: Initiate config replica set with priorities
+  hosts: n2  # Initiate from n2 (intended primary)
   become: yes
   vars:
     config_replset_name: configReplSet
     config_port: 27051
-
   tasks:
-    - name: Build replica set members config dynamically from group g1
-      set_fact:
-        config_members: >-
-          [{% for host in groups['g1'] %}
-            { _id: {{ loop.index0 }}, host: "{{ hostvars[host]['ansible_host'] | default(host) }}:{{ config_port }}" }{% if not loop.last %},{% endif %}
-          {% endfor %}]
-
-    - name: Generate rs.initiate command
-      set_fact:
-        replset_initiate_command: |
-          rs.initiate({
-            _id: "{{ config_replset_name }}",
-            configsvr: true,
-            members: {{ config_members | to_nice_json }}
-          });
-
-    - name: Run rs.initiate() on config server
-      shell: |
-        mongosh --port {{ config_port }} --eval '{{ replset_initiate_command }}'
+    - name: Initiate config replica set from n2 with dynamic IPs and priorities
+      ansible.builtin.shell: |
+        mongosh --host localhost --port {{ config_port }} <<'JS'
+        rs.initiate({
+          _id: "{{ config_replset_name }}",
+          configsvr: true,
+          members: [
+            { _id: 0, host: "{{ hostvars['n2']['ansible_host'] }}:{{ config_port }}", priority: 2 },
+            { _id: 1, host: "{{ hostvars['n3']['ansible_host'] }}:{{ config_port }}", priority: 1 },
+            { _id: 2, host: "{{ hostvars['n1']['ansible_host'] }}:{{ config_port }}", priority: 0 }
+          ]
+        });
+        JS
       args:
         executable: /bin/bash
-      register: replset_output
+      register: configReplSet_init
 
-    - name: Show replica set initiation result
+    - name: Show output of config replica set initiation
       debug:
-        var: replset_output.stdout
+        var: configReplSet_init.stdout
