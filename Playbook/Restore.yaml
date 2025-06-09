@@ -3,7 +3,7 @@
   hosts: mongos
   become: yes
   vars:
-    restore_script: /home/mongodb/scripts/Restore.sh
+    restore_script: /usr/local/bin/mongo_restore.sh
     restore_date: "{{ date | default('2025-06-04') }}"
   tasks:
     - name: Execute Restore.sh with date {{ restore_date }}
