@@ -41,7 +41,7 @@ pipeline {
                                         disableHostKeyChecking: true,
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
-                                        playbook: 'Playbook/initiate-config-replset.yml'
+                                        playbook: 'Playbook/initiate-config-replset.yml',
                                         extras: "-e ansible_become_pass=${BECOME_PASS}"
                     }
                 }
@@ -56,7 +56,7 @@ pipeline {
                                         disableHostKeyChecking: true,
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
-                                        playbook: 'Playbook/rsShard1.yml'
+                                        playbook: 'Playbook/rsShard1.yml',
                                         extras: "-e ansible_become_pass=${BECOME_PASS}"
                     }
                 }
@@ -71,7 +71,7 @@ pipeline {
                                         disableHostKeyChecking: true,
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
-                                        playbook: 'Playbook/rsShard2.yml'
+                                        playbook: 'Playbook/rsShard2.yml',
                                         extras: "-e ansible_become_pass=${BECOME_PASS}"
                     }
                 }
@@ -86,7 +86,7 @@ pipeline {
                                         disableHostKeyChecking: true,
                                         installation: 'Ansible',
                                         inventory: 'dev.inv',
-                                        playbook: 'Playbook/Mongos.yml'
+                                        playbook: 'Playbook/Mongos.yml',
                                         extras: "-e ansible_become_pass=${BECOME_PASS}"
                     }
                 }
