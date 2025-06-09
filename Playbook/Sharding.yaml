@@ -1,21 +1,17 @@
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: mongodb-sharding-job
-spec:
-  template:
-    spec:
-      containers:
-      - name: sharding-script
-        image: mongo:6.0
-        command: ["mongosh"]
-        args: ["--host", "mongos-host", "--port", "27027", "/scripts/sharding.js"]
-        volumeMounts:
-        - name: script-volume
-          mountPath: /scripts
-      restartPolicy: Never
-      volumes:
-      - name: script-volume
-        configMap:
-          name: mongodb-scripts
-  backoffLimit: 2
+---
+- name: Run MongoDB sharding script
+  hosts: mongos
+  become: yes
+  vars:
+    script_path: /home/mongodb/scripts/sharding.js
+    mongos_port: 27054
+  tasks:
+    - name: Execute sharding.js via mongosh
+      shell: |
+        mongosh --host localhost --port {{ mongos_port }} {{ script_path }}
+      register: sharding_output
+
+    - name: Show sharding script result
+      debug:
+        var: sharding_output.stdout_lines
+
