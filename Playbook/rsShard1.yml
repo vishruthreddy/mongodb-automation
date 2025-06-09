@@ -25,19 +25,20 @@
         group: mongodb
         mode: '0644'
 
-    - name: Run mongod shard1 instance
-      ansible.builtin.shell: >
-        mongod --shardsvr \
-               --port {{ shard_port }} \
-               --dbpath {{ shard_dbpath }} \
-               --logpath {{ shard_logpath }} \
-               --logappend \
-               --fork \
-               --replSet {{ repl_set_name }} \
-               --bind_ip 0.0.0.0
+    - name: Start mongod shard1 instance (forked, background)
+      ansible.builtin.shell: |
+        sudo -u mongodb mongod \
+          --shardsvr \
+          --replSet {{ repl_set_name }} \
+          --port {{ shard_port }} \
+          --dbpath {{ shard_dbpath }} \
+          --bind_ip 0.0.0.0 \
+          --logpath {{ shard_logpath }} \
+          --logappend \
+          --fork
       args:
         creates: "{{ shard_dbpath }}/mongod.lock"
-      become_user: mongodb
+
 
 # Play 2: Initiate rsShard1 from n2
 - name: Initiate rsShard1 replica set

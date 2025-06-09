@@ -26,19 +26,19 @@
         group: mongodb
         mode: '0644'
 
-    - name: Run mongod shard2 instance
-      ansible.builtin.shell: >
-        mongod --shardsvr \
-               --port {{ shard_port }} \
-               --dbpath {{ shard_dbpath }} \
-               --logpath {{ shard_logpath }} \
-               --logappend \
-               --fork \
-               --replSet {{ repl_set_name }} \
-               --bind_ip 0.0.0.0
+    - name: Run mongod shard2 instance (forked, background)
+      ansible.builtin.shell: |
+        sudo -u mongodb mongod \
+          --shardsvr \
+          --replSet {{ repl_set_name }} \
+          --port {{ shard_port }} \
+          --dbpath {{ shard_dbpath }} \
+          --bind_ip 0.0.0.0 \
+          --logpath {{ shard_logpath }} \
+          --logappend \
+          --fork
       args:
         creates: "{{ shard_dbpath }}/mongod.lock"
-      become_user: mongodb
 
 - name: Initiate rsShard2 with dynamic inventory
   hosts: n3  # Initiate from n2 (intended primary)
