@@ -3,8 +3,8 @@
   hosts: mongos
   become: yes
   vars:
-    script_path: /home/mongodb/scripts/sharding.js
-    mongos_port: 27054
+    script_path: /home/matilda-svc/scripts/sharding.js
+    mongos_port: 27027
   tasks:
     - name: Execute sharding.js via mongosh
       shell: |
