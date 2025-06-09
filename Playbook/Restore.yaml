@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mongodb-restore-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: restore-script
+        image: mongo:6.0
+        command: ["/bin/bash", "/scripts/Restore.sh", "2025-06-04"]
+        volumeMounts:
+        - name: script-volume
+          mountPath: /scripts
+        - name: backup-volume
+          mountPath: /backup
+      restartPolicy: Never
+      volumes:
+      - name: script-volume
+        configMap:
+          name: mongodb-scripts
+      - name: backup-volume
+        persistentVolumeClaim:
+          claimName: mongo-backup-pvc
+  backoffLimit: 2
